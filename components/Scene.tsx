@@ -113,10 +113,10 @@ const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhoto, isClearing 
 
       <EffectComposer enableNormalPass={false} multisampling={8}>
         <Bloom 
-            luminanceThreshold={0.15} 
+            luminanceThreshold={0.9} 
             mipmapBlur 
-            intensity={1.5} 
-            radius={0.5} 
+            intensity={isFocusing ? 0 : 0.4} 
+            radius={0.4}
         />
         <Vignette eskil={false} offset={0.1} darkness={1.1} />
       </EffectComposer>
