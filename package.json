@@ -1,0 +1,31 @@
+{
+  "name": "grand-luxury-interactive-christmas-tree",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@react-three/drei": "^9.99.0",
+    "@react-three/fiber": "^8.15.12",
+    "@react-three/postprocessing": "^2.16.0",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/three": "^0.182.0",
+    "@vitejs/plugin-react": "^5.1.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tailwindcss": "^4.1.18",
+    "three": "^0.160.0",
+    "uuid": "^9.0.1",
+    "vite": "^7.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

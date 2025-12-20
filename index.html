@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Grand Luxury Christmas Tree</title>
+    
+    <!-- Tailwind CSS v4 CDN (Mirrored via jsdmirror) -->
+    <script src="https://cdn.jsdmirror.cn/npm/@tailwindcss/browser@4"></script>
+    
+    <!-- Link to index.css -->
+    <link rel="stylesheet" href="index.css">
+
+    <!-- Babel Standalone for in-browser TSX transpilation (Mirrored via jsdmirror) -->
+    <script src="https://cdn.jsdmirror.cn/npm/@babel/standalone/babel.min.js"></script>
+
+    <!-- Network/Script Error Handler -->
+    <script>
+      window.addEventListener('error', function(e) {
+        if(e.target && e.target.tagName === 'SCRIPT') {
+           console.error('Script load error:', e.target.src);
+        }
+      }, true);
+
+      setTimeout(function() {
+        var loader = document.getElementById('initial-loader');
+        var root = document.getElementById('root');
+        if (loader && loader.parentNode) {
+            if (root && root.children.length > 0) {
+                loader.classList.add('loaded');
+                setTimeout(function(){ 
+                   if(loader.parentNode) loader.parentNode.removeChild(loader); 
+                }, 1000);
+            } else {
+                var errEl = document.getElementById('loader-error');
+                if(errEl) {
+                    errEl.style.display = 'block';
+                    errEl.innerText = 'Application failed to start. Please check console for ReactCurrentOwner or Import errors.';
+                }
+            }
+        }
+      }, 10000);
+    </script>
+
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react/": "https://esm.sh/react@18.3.1/",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/": "https://esm.sh/react-dom@18.3.1/",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+    "three": "https://esm.sh/three@0.160.0",
+    "three/": "https://esm.sh/three@0.160.0/",
+    "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.12?external=react,react-dom,three",
+    "@react-three/drei": "https://esm.sh/@react-three/drei@9.99.0?external=react,react-dom,three,@react-three/fiber",
+    "@react-three/postprocessing": "https://esm.sh/@react-three/postprocessing@2.16.0?external=react,react-dom,three,@react-three/fiber",
+    "uuid": "https://esm.sh/uuid@9.0.1",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "@tailwindcss/vite": "https://esm.sh/@tailwindcss/vite@^4.1.18"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <div id="initial-loader">
+      <svg class="star-loader-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+         <path d="M50 0 C 53 32, 68 47, 100 50 C 68 53, 53 68, 50 100 C 47 68, 32 53, 0 50 C 32 47, 47 32, 50 0 Z" fill="rgb(212, 175, 55)" />
+         <path d="M50 20 L 58 42 L 80 50 L 58 58 L 50 80 L 42 58 L 20 50 L 42 42 Z" fill="rgb(212, 175, 55)" fill-opacity="0.5" />
+      </svg>
+      <div id="loader-error" class="error-message"></div>
+    </div>
+    
+    <!-- Load index.tsx via Babel -->
+    <script type="text/babel" data-type="module" src="/index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

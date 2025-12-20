@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@theme {
+  /* Luxury Color Palette */
+  --color-luxury-gold: #D4AF37;
+  --color-luxury-gold-light: #FEDC56;
+  --color-luxury-gold-dark: #AA8C2C;
+  --color-luxury-emerald: #043927;
+  --color-luxury-emerald-dark: #012115;
+
+  /* Typography */
+  --font-serif: Georgia, serif;
+
+  /* Animations */
+  --animate-star-pulse: star-pulse 2.5s ease-in-out infinite;
+
+  @keyframes star-pulse {
+      0%, 100% { 
+          opacity: 0.7; 
+          transform: scale(0.95); 
+      }
+      50% { 
+          opacity: 1; 
+          transform: scale(1.05); 
+          filter: drop-shadow(0 0 20px rgba(212,175,55,0.9)); 
+      }
+  }
+}
+
+/* Global Styles */
+:root {
+  background-color: var(--color-luxury-emerald-dark);
+}
+
+body, html { 
+  width: 100%; 
+  height: 100%; 
+  margin: 0; 
+  padding: 0; 
+  overflow: hidden; 
+  background-color: var(--color-luxury-emerald-dark);
+  
+  /* CRITICAL MOBILE FIXES */
+  -webkit-user-select: none; /* Chrome/Safari/Opera */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE/Edge */
+  user-select: none; /* Standard */
+  
+  -webkit-touch-callout: none; /* iOS Safari: Disable long-press menu */
+  -webkit-tap-highlight-color: transparent; /* Disable tap highlight */
+}
+
+/* Disable selection on everything by default */
+* {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Re-enable select for inputs if needed */
+input, textarea {
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+
+/* Prevent image dragging/saving interactions */
+img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+canvas { 
+  touch-action: none; 
+  outline: none;
+}
+
+/* Loader Styles */
+#initial-loader {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, rgba(1, 21, 16, 0.3), rgba(0, 0, 0, 0.6));
+  backdrop-filter: blur(8px); 
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+  transition: opacity 0.8s ease-out;
+  pointer-events: all;
+}
+
+#initial-loader.loaded {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.star-loader-svg {
+  width: 80px;
+  height: 80px;
+  color: rgb(212, 175, 55);
+  filter: drop-shadow(0 0 10px rgba(212,175,55,0.5));
+  animation: star-pulse 2.5s ease-in-out infinite;
+  will-change: transform, opacity, filter;
+  transform: translateZ(0); 
+}
+
+.error-message {
+  display: none;
+  color: #ff4444;
+  font-family: sans-serif;
+  margin-top: 30px;
+  font-size: 14px;
+  text-align: center;
+  padding: 15px;
+  max-width: 90%;
+  border: 1px solid #ff4444;
+  background: rgba(50, 0, 0, 0.9);
+  border-radius: 8px;
+  z-index: 10000;
+  pointer-events: auto;
+}
