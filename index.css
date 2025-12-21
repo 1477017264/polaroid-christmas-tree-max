@@ -123,3 +123,12 @@ canvas {
   z-index: 10000;
   pointer-events: auto;
 }
+
+/* Utility to hide scrollbar but allow scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -311,27 +311,21 @@ const App = () => {
                 <ProcessingOverlay isProcessing={isProcessing} />
                 <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
 
-                <div className="absolute top-8 right-8 z-50">
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setIsHelpOpen(true); }}
-                        className="p-2 rounded-full bg-black/60 border border-luxury-gold backdrop-blur-xl hover:bg-luxury-gold/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)]"
-                    >
-                        <IconInfo size={20} />
-                    </button>
-                </div>
+                
 
                 <div 
                     className="absolute right-4 sm:right-8 z-[55] flex items-center justify-end overflow-visible"
                     style={{ bottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
                 >
                     <div 
-                        className={`absolute right-0 flex items-center gap-2 sm:gap-4 p-1 bg-black/80 backdrop-blur-3xl border border-luxury-gold rounded-full px-4 sm:px-6 py-2 shadow-[0_10px_50px_rgba(0,0,0,0.8)] transition-all duration-500 cubic-bezier(0.23, 1, 0.32, 1) ${isMenuOpen ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-[110%] opacity-0 scale-95 pointer-events-none'}`}
+                        className={`absolute right-0 flex items-center gap-2 sm:gap-4 p-1 bg-black/80 backdrop-blur-3xl border border-luxury-gold rounded-full px-4 sm:px-6 py-2 shadow-[0_10px_50px_rgba(0,0,0,0.8)] transition-all duration-500 cubic-bezier(0.23, 1, 0.32, 1) overflow-x-auto no-scrollbar ${isMenuOpen ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-[110%] opacity-0 scale-95 pointer-events-none'}`}
                         style={{ 
                             whiteSpace: 'nowrap', 
                             maxWidth: 'calc(100vw - 2.5rem)',
                             color: '#D4AF37',
                             transform: 'translateZ(0)',
-                            backfaceVisibility: 'hidden'
+                            backfaceVisibility: 'hidden',
+                            scrollbarWidth: 'none'
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -343,7 +337,9 @@ const App = () => {
                         
                         <label className="flex items-center gap-2 cursor-pointer text-luxury-gold hover:text-luxury-gold-light transition-colors text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em] px-1 font-serif shrink-0">
                             <IconUpload />
-                            <span className="text-luxury-gold shrink-0" style={{ transform: 'translateZ(0)' }}>PHOTOS {photos.length}/{MAX_PHOTOS}</span>
+                            <span className="text-luxury-gold shrink-0" style={{ transform: 'translateZ(0)' }}>
+                                <span className="hidden sm:inline">PHOTOS </span>{photos.length}/{MAX_PHOTOS}
+                            </span>
                             <input type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={photos.length >= MAX_PHOTOS} />
                         </label>
 
@@ -351,10 +347,23 @@ const App = () => {
 
                         <label className="flex items-center gap-2 cursor-pointer text-luxury-gold hover:text-luxury-gold-light transition-colors text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em] px-1 font-serif shrink-0">
                             <IconBackImage />
-                            <span className="text-luxury-gold shrink-0" style={{ transform: 'translateZ(0)' }}>BACK</span>
+                            <span className="text-luxury-gold shrink-0" style={{ transform: 'translateZ(0)' }}>
+                                <span className="hidden sm:inline">BACK</span>
+                            </span>
                             <input type="file" accept="image/*" className="hidden" onChange={handleBackPhotoUpload} />
                         </label>
+                        <div className="w-[1px] h-4 bg-luxury-gold/40 shrink-0" />
 
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setIsHelpOpen(true); }}
+                            className="flex items-center gap-2 cursor-pointer text-luxury-gold hover:text-luxury-gold-light transition-colors text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em] px-1 font-serif shrink-0"
+                        >
+                            <IconInfo size={16} />
+                            <span className="text-luxury-gold shrink-0" style={{ transform: 'translateZ(0)' }}>
+                                <span className="hidden sm:inline">INFO</span>
+                            </span>
+                        </button>
+                        
                         {photos.length > 0 && (
                             <>
                                 <div className="w-[1px] h-4 bg-luxury-gold/40 shrink-0" />
