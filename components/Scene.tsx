@@ -9,10 +9,17 @@ import Ornaments from './Ornaments.tsx';
 import PhotoGallery from './PhotoGallery.tsx';
 import Star from './Star.tsx';
 
+// Interface matching App.tsx
+interface PhotoItem {
+    url: string;
+    height: number;
+}
+
 interface SceneProps {
   treeState: TreeState;
-  photos: string[];
-  backPhoto: string | null;
+  photos: PhotoItem[]; 
+  backPhotoUrl: string | null; // Changed prop name
+  backText: string; // Added prop
   isClearing: boolean;
 }
 
@@ -20,7 +27,7 @@ const BOX_PALETTE = ['#8B0000', '#D4AF37', '#ffffff'];
 const BALL_PALETTE = ['#D4AF37', '#FF0000', '#C0C0C0', '#0F5132'];
 const LIGHT_PALETTE = ['#FFD700'];
 
-const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhoto, isClearing }) => {
+const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhotoUrl, backText, isClearing }) => {
   const [isFocusing, setIsFocusing] = useState(false);
 
   const dpr = useMemo<[number, number]>(() => {
@@ -85,7 +92,8 @@ const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhoto, isClearing 
         <PhotoGallery 
           treeState={treeState} 
           photos={photos} 
-          backPhoto={backPhoto} 
+          backPhotoUrl={backPhotoUrl} 
+          backText={backText}
           onFocusChange={setIsFocusing}
           isClearing={isClearing}
         />
@@ -109,14 +117,17 @@ const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhoto, isClearing 
         minDistance={5}
         autoRotate={true}
         autoRotateSpeed={0.8} 
+        enabled={true}
       />
 
       <EffectComposer enableNormalPass={false} multisampling={8}>
+        {/* Disable Bloom intensity when focusing so the image remains sharp */}
+        {/* Further reduced global glow: High threshold (0.9), Low intensity (0.4) */}
         <Bloom 
             luminanceThreshold={0.9} 
             mipmapBlur 
             intensity={isFocusing ? 0 : 0.4} 
-            radius={0.4}
+            radius={0.4} 
         />
         <Vignette eskil={false} offset={0.1} darkness={1.1} />
       </EffectComposer>

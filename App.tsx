@@ -1,22 +1,21 @@
-import React, { useState, useCallback, Suspense, useEffect, useRef, ReactNode, Component } from 'react';
+import React, { Component, useState, useCallback, Suspense, useEffect, useRef, ReactNode } from 'react';
 import { useProgress } from '@react-three/drei';
 import Scene from './components/Scene.tsx';
 import { TreeState } from './types.ts';
 
 const MAX_PHOTOS = 30;
+// Constants for Frame sizing
+const FRAME_WIDTH = 1.2;
+const STANDARD_ASPECT = 8.9 / 10.8; 
+const STANDARD_HEIGHT = FRAME_WIDTH / STANDARD_ASPECT; // ~1.456
 
-const DEFAULT_BACK_PHOTO_URI = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="621" viewBox="0 0 512 621">
-  <rect width="512" height="621" fill="#f0f0f0"/>
-  <rect width="512" height="528" fill="#111111"/>
-  <text x="40" y="42%" dominant-baseline="middle" text-anchor="start" fill="white" font-family="sans-serif" font-weight="bold" font-size="60">Wish you</text>
-  <text x="40" y="55%" dominant-baseline="middle" text-anchor="start" fill="white" font-family="sans-serif" font-weight="bold" font-size="60">were here.</text>
-  <text x="492" y="568" text-anchor="end" fill="#333" font-family="sans-serif" font-weight="bold" font-size="24">Polaroid</text>
-  <text x="492" y="598" text-anchor="end" fill="#333" font-family="monospace" font-size="20">CapyPola</text>
-</svg>
-`)}`;
+// Photo State Interface
+interface PhotoItem {
+    url: string;
+    height: number;
+}
 
-const resizeImage = (file: File): Promise<string> => {
+const processImage = (file: File): Promise<{ url: string; width: number; height: number }> => {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -25,9 +24,12 @@ const resizeImage = (file: File): Promise<string> => {
       img.src = event.target?.result as string;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_SIZE = 1024; 
+        // High Resolution (2K)
+        const MAX_SIZE = 2048; 
         let width = img.width;
         let height = img.height;
+        
+        // Calculate dimensions to fit MAX_SIZE while preserving aspect
         if (width > height) {
           if (width > MAX_SIZE) {
             height *= MAX_SIZE / width;
@@ -39,6 +41,7 @@ const resizeImage = (file: File): Promise<string> => {
             height = MAX_SIZE;
           }
         }
+        
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
@@ -47,13 +50,13 @@ const resizeImage = (file: File): Promise<string> => {
             canvas.toBlob((blob) => {
               if (blob) {
                 const url = URL.createObjectURL(blob);
-                resolve(url);
+                resolve({ url, width, height });
               } else {
-                resolve(img.src);
+                resolve({ url: img.src, width, height });
               }
-            }, 'image/jpeg', 0.85);
+            }, 'image/jpeg', 0.92); // High Quality JPEG
         } else {
-            resolve(img.src);
+            resolve({ url: img.src, width, height });
         }
       };
     };
@@ -67,6 +70,11 @@ const IconUpload = () => (
         <polyline points="21 15 16 10 5 21"/>
     </svg>
 );
+const IconFreeRatio = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+    </svg>
+);
 const IconBackImage = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
@@ -78,8 +86,15 @@ const IconTrash = () => (
 const IconClose = ({ size = 20 }: { size?: number }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
 );
-const IconInfo = ({ size = 14 }: { size?: number }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+const IconInfo = ({ size = 16 }: { size?: number }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+);
+const IconMessage = ({ size = 16 }: { size?: number }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    <line x1="8" y1="9" x2="16" y2="9"></line>
+    <line x1="8" y1="13" x2="14" y2="13"></line>
+  </svg>
 );
 const IconChevronLeft = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -133,7 +148,10 @@ interface ErrorBoundaryProps { children?: ReactNode; }
 interface ErrorBoundaryState { hasError: boolean; error: string; }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-    public state: ErrorBoundaryState = { hasError: false, error: '' };
+    constructor(props: ErrorBoundaryProps) {
+        super(props);
+        this.state = { hasError: false, error: '' };
+    }
 
     static getDerivedStateFromError(error: any): ErrorBoundaryState { 
         return { hasError: true, error: error.toString() }; 
@@ -204,12 +222,82 @@ const HelpModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
     );
 };
 
+const MessageModal = ({ isOpen, onClose, onConfirm, onClear }: { isOpen: boolean; onClose: () => void; onConfirm: (text: string) => void; onClear: () => void }) => {
+    const [text, setText] = useState('');
+
+    const handleConfirm = () => {
+        onConfirm(text);
+        setText('');
+    };
+
+    const handleClear = () => {
+        onClear();
+        setText('');
+    };
+
+    return (
+        <div 
+            className={`fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-md transition-all duration-500 ease-in-out ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+            onClick={onClose}
+        >
+            <div 
+                className={`w-[85%] max-w-[360px] border-2 border-[#D4AF37] rounded-[24px] p-8 relative transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) text-center ${isOpen ? 'scale-100 translate-y-0 opacity-100' : 'scale-90 translate-y-8 opacity-0'}`}
+                style={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)', 
+                    backdropFilter: 'blur(32px) saturate(180%)', 
+                    WebkitBackdropFilter: 'blur(32px) saturate(180%)',
+                    boxShadow: '0 0 50px rgba(212, 175, 55, 0.3)'
+                }}
+                onClick={e => e.stopPropagation()}
+            >
+                <button onClick={onClose} className="absolute top-5 right-5 text-[#D4AF37]/60 hover:text-[#D4AF37] transition-colors p-2">
+                    <IconClose size={24} />
+                </button>
+                <div className="flex flex-col items-center mb-6">
+                    <h2 className="text-[#D4AF37] text-2xl tracking-[0.2em] uppercase font-serif font-extrabold">定制寄语</h2>
+                    <p className="text-white/60 text-xs font-serif mt-2">Custom Message</p>
+                </div>
+                
+                <textarea
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="在此输入您的祝福语..."
+                    maxLength={140}
+                    rows={4}
+                    className="w-full bg-black/30 border border-[#D4AF37]/50 rounded-lg p-3 text-white font-serif placeholder-white/30 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] mb-6 resize-none"
+                    style={{ WebkitUserSelect: 'text', userSelect: 'text' }}
+                />
+
+                <div className="flex gap-3">
+                    <button 
+                        onClick={handleClear}
+                        className="flex-1 px-4 py-2 border border-[#D4AF37]/50 text-[#D4AF37] rounded-full font-serif text-sm hover:bg-[#D4AF37]/10 transition-colors"
+                    >
+                        清空恢复
+                    </button>
+                    <button 
+                        onClick={handleConfirm}
+                        className="flex-1 px-4 py-2 bg-[#D4AF37] text-black font-bold rounded-full font-serif text-sm hover:bg-[#FEDC56] transition-colors shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                    >
+                        确认生成
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const App = () => {
     const [treeState, setTreeState] = useState<TreeState>(TreeState.CHAOS);
-    const [photos, setPhotos] = useState<string[]>([]);
-    const [backPhoto, setBackPhoto] = useState<string | null>(DEFAULT_BACK_PHOTO_URI);
+    const [photos, setPhotos] = useState<PhotoItem[]>([]);
+    
+    // Split Back Photo State
+    const [backImgUrl, setBackImgUrl] = useState<string | null>(null);
+    const [backText, setBackText] = useState<string>("Wish you\nwere here.");
+
     const [isClearing, setIsClearing] = useState(false);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
+    const [isMessageOpen, setIsMessageOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -256,8 +344,25 @@ const App = () => {
         const newPhotos = [...photos];
         for (let i = 0; i < files.length; i++) {
             if (newPhotos.length >= MAX_PHOTOS) break;
-            const dataUrl = await resizeImage(files[i]);
-            newPhotos.push(dataUrl);
+            const { url } = await processImage(files[i]);
+            newPhotos.push({ url, height: STANDARD_HEIGHT });
+        }
+        setPhotos(newPhotos);
+        setIsProcessing(false);
+        e.target.value = '';
+    }, [photos]);
+
+    const handleFreeRatioUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files) return;
+        setIsProcessing(true);
+        const newPhotos = [...photos];
+        for (let i = 0; i < files.length; i++) {
+            if (newPhotos.length >= MAX_PHOTOS) break;
+            const { url, width, height } = await processImage(files[i]);
+            const aspectRatio = height / width;
+            const dynamicHeight = FRAME_WIDTH * aspectRatio;
+            newPhotos.push({ url, height: dynamicHeight });
         }
         setPhotos(newPhotos);
         setIsProcessing(false);
@@ -268,22 +373,48 @@ const App = () => {
         const file = e.target.files?.[0];
         if (!file) return;
         setIsProcessing(true);
-        const dataUrl = await resizeImage(file);
+        const { url } = await processImage(file);
         
-        if (backPhoto && backPhoto.startsWith('blob:')) {
-            URL.revokeObjectURL(backPhoto);
+        if (backImgUrl && backImgUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(backImgUrl);
         }
         
-        setBackPhoto(dataUrl);
+        setBackImgUrl(url); // Set Image
         setIsProcessing(false);
         e.target.value = '';
-    }, [backPhoto]);
+    }, [backImgUrl]);
+
+    const handleUpdateMessage = (text: string) => {
+        setIsProcessing(true);
+        setBackText(text); 
+        // If updating text, we should probably clear the image so text shows?
+        // Or keep image? Prompt says "adapt text". 
+        // If image is set, usually we show image. If text is set, we show text.
+        // Let's clear image to ensure text is visible.
+        if (backImgUrl && backImgUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(backImgUrl);
+        }
+        setBackImgUrl(null);
+        setIsMessageOpen(false);
+        setTimeout(() => setIsProcessing(false), 500);
+    };
+
+    const handleClearMessage = () => {
+        setIsProcessing(true);
+        setBackText(""); // Default fallback
+        if (backImgUrl && backImgUrl.startsWith('blob:')) {
+             URL.revokeObjectURL(backImgUrl);
+        }
+        setBackImgUrl(null);
+        setIsMessageOpen(false);
+        setTimeout(() => setIsProcessing(false), 500);
+    };
 
     const clearPhotos = useCallback(() => {
         setIsClearing(true);
         setTimeout(() => { 
-            photos.forEach(url => {
-                if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+            photos.forEach(item => {
+                if (item.url.startsWith('blob:')) URL.revokeObjectURL(item.url);
             });
             setPhotos([]); 
             setIsClearing(false); 
@@ -304,14 +435,25 @@ const App = () => {
                 onClick={handleBackgroundClick}
             >
                 <Suspense fallback={null}>
-                    <Scene treeState={treeState} photos={photos} backPhoto={backPhoto} isClearing={isClearing} />
+                    {/* Pass both Back Img and Back Text to Scene */}
+                    <Scene 
+                        treeState={treeState} 
+                        photos={photos} 
+                        backPhotoUrl={backImgUrl} 
+                        backText={backText}
+                        isClearing={isClearing} 
+                    />
                 </Suspense>
 
                 <Loader />
                 <ProcessingOverlay isProcessing={isProcessing} />
                 <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
-
-                
+                <MessageModal 
+                    isOpen={isMessageOpen} 
+                    onClose={() => setIsMessageOpen(false)} 
+                    onConfirm={handleUpdateMessage}
+                    onClear={handleClearMessage}
+                />
 
                 <div 
                     className="absolute right-4 sm:right-8 z-[55] flex items-center justify-end overflow-visible"
@@ -338,9 +480,19 @@ const App = () => {
                         <label className="flex items-center gap-2 cursor-pointer text-luxury-gold hover:text-luxury-gold-light transition-colors text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em] px-1 font-serif shrink-0">
                             <IconUpload />
                             <span className="text-luxury-gold shrink-0" style={{ transform: 'translateZ(0)' }}>
-                                <span className="hidden sm:inline">PHOTOS </span>{photos.length}/{MAX_PHOTOS}
+                                <span className="hidden sm:inline">STD</span>
                             </span>
                             <input type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={photos.length >= MAX_PHOTOS} />
+                        </label>
+                        
+                        <div className="w-[1px] h-4 bg-luxury-gold/40 shrink-0" />
+
+                        <label className="flex items-center gap-2 cursor-pointer text-luxury-gold hover:text-luxury-gold-light transition-colors text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em] px-1 font-serif shrink-0">
+                            <IconFreeRatio />
+                            <span className="text-luxury-gold shrink-0" style={{ transform: 'translateZ(0)' }}>
+                                <span className="hidden sm:inline">FREE</span>
+                            </span>
+                            <input type="file" multiple accept="image/*" className="hidden" onChange={handleFreeRatioUpload} disabled={photos.length >= MAX_PHOTOS} />
                         </label>
 
                         <div className="w-[1px] h-4 bg-luxury-gold/40 shrink-0" />
@@ -352,6 +504,19 @@ const App = () => {
                             </span>
                             <input type="file" accept="image/*" className="hidden" onChange={handleBackPhotoUpload} />
                         </label>
+
+                        <div className="w-[1px] h-4 bg-luxury-gold/40 shrink-0" />
+
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setIsMessageOpen(true); }}
+                            className="flex items-center gap-2 cursor-pointer text-luxury-gold hover:text-luxury-gold-light transition-colors text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em] px-1 font-serif shrink-0"
+                        >
+                            <IconMessage size={16} />
+                            <span className="text-luxury-gold shrink-0" style={{ transform: 'translateZ(0)' }}>
+                                <span className="hidden sm:inline">TEXT</span>
+                            </span>
+                        </button>
+
                         <div className="w-[1px] h-4 bg-luxury-gold/40 shrink-0" />
 
                         <button
@@ -363,7 +528,7 @@ const App = () => {
                                 <span className="hidden sm:inline">INFO</span>
                             </span>
                         </button>
-                        
+
                         {photos.length > 0 && (
                             <>
                                 <div className="w-[1px] h-4 bg-luxury-gold/40 shrink-0" />

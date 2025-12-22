@@ -46,4 +46,5 @@ export interface PhotoData {
   position: Vector3;
   rotation: Euler;
   chaosPos: Vector3;
+  frameHeight: number;
 }

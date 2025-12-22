@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { PhotoData, TreeState } from '../types.ts';
+import { createBackPhotoUri } from '../utils.ts';
 
 interface PhotoFrameProps {
   data: PhotoData;
@@ -11,12 +12,12 @@ interface PhotoFrameProps {
   onFocus: (id: string) => void;
   onBlur: () => void;
   backPhotoUrl: string | null;
+  backText: string;
   isClearing: boolean;
 }
 
-// Aspect ratio 8.9:10.8 -> 0.824 width/height ratio
+// Fixed Width
 const FRAME_WIDTH = 1.2;
-const FRAME_HEIGHT = 1.2 * (10.8 / 8.9);
 const GOLD_COLOR = new THREE.Color('#D4AF37');
 
 // Helper to disable depth test/write conditionally
@@ -28,8 +29,15 @@ const getMaterialProps = (isFocused: boolean) => {
 
 // Hook to handle "object-fit: cover" logic for textures on 3D planes
 const useCoverTexture = (texture: THREE.Texture, frameWidth: number, frameHeight: number) => {
+  const { gl } = useThree();
   useLayoutEffect(() => {
     if (!texture.image) return;
+
+    // Enhance texture quality
+    texture.anisotropy = gl.capabilities.getMaxAnisotropy();
+    texture.minFilter = THREE.LinearMipMapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = true;
 
     // Fix: Cast image to HTMLImageElement to access width/height as it might be 'unknown'
     const img = texture.image as HTMLImageElement;
@@ -50,7 +58,7 @@ const useCoverTexture = (texture: THREE.Texture, frameWidth: number, frameHeight
     // Key: SRGB Color Space for correct color representation
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.needsUpdate = true;
-  }, [texture, frameWidth, frameHeight]);
+  }, [texture, frameWidth, frameHeight, gl]);
 
   return texture;
 };
@@ -108,13 +116,25 @@ const BackPhotoFace = ({ url, width, height, isFocused }: { url: string, width: 
 };
 
 const PhotoFrame: React.FC<PhotoFrameProps> = ({ 
-  data, treeState, isFocused, onFocus, onBlur, backPhotoUrl, isClearing
+  data, treeState, isFocused, onFocus, onBlur, backPhotoUrl, backText, isClearing
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   
   const [isFlipped, setIsFlipped] = useState(false);
   const { camera } = useThree();
   
+  // Use the dynamic height from data, or fallback to standard ratio
+  const currentHeight = data.frameHeight || (FRAME_WIDTH * (10.8 / 8.9));
+
+  // Determine the texture for the back
+  const backTextureUri = useMemo(() => {
+      // If user uploaded an image, use it
+      if (backPhotoUrl) return backPhotoUrl;
+      // Otherwise generate SVG based on CURRENT frame dimensions
+      const aspect = currentHeight / FRAME_WIDTH;
+      return createBackPhotoUri(backText, aspect);
+  }, [backPhotoUrl, backText, currentHeight]);
+
   // Animation progress: 0 (Resting) -> 1 (Focused)
   const progress = useRef(0);
   // Flip animation progress: 0 (Front) -> 1 (Back)
@@ -235,7 +255,7 @@ const PhotoFrame: React.FC<PhotoFrameProps> = ({
     const viewWidth = viewHeight * perspectiveCamera.aspect;
 
     const objW = FRAME_WIDTH + 0.2; 
-    const objH = FRAME_HEIGHT + 0.2;
+    const objH = currentHeight + 0.2;
     const SAFE_MARGIN = 0.85; 
     
     const scaleH = (viewHeight * SAFE_MARGIN) / objH;
@@ -278,7 +298,7 @@ const PhotoFrame: React.FC<PhotoFrameProps> = ({
       <group>
         {/* Border */}
         <mesh position={[0, 0, -0.01]}>
-          <boxGeometry args={[FRAME_WIDTH + 0.08, FRAME_HEIGHT + 0.08, 0.05]} />
+          <boxGeometry args={[FRAME_WIDTH + 0.08, currentHeight + 0.08, 0.05]} />
           {/* Frame: High Metalness for Gold Reflection */}
           <meshStandardMaterial 
             color={GOLD_COLOR} 
@@ -289,17 +309,9 @@ const PhotoFrame: React.FC<PhotoFrameProps> = ({
           />
         </mesh>
 
-        <FrontPhotoFace url={data.url} width={FRAME_WIDTH} height={FRAME_HEIGHT} isFocused={isFocused} />
-
-        {backPhotoUrl ? (
-            <BackPhotoFace url={backPhotoUrl} width={FRAME_WIDTH} height={FRAME_HEIGHT} isFocused={isFocused} />
-        ) : (
-            // Fallback
-            <mesh position={[0, 0, -0.05]} rotation={[0, Math.PI, 0]}>
-                <planeGeometry args={[FRAME_WIDTH, FRAME_HEIGHT]} />
-                <meshStandardMaterial color="#111" roughness={0.2} metalness={0.1} {...matProps} />
-            </mesh>
-        )}
+        <FrontPhotoFace url={data.url} width={FRAME_WIDTH} height={currentHeight} isFocused={isFocused} />
+        
+        <BackPhotoFace url={backTextureUri} width={FRAME_WIDTH} height={currentHeight} isFocused={isFocused} />
       </group>
     </group>
   );

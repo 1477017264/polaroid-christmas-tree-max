@@ -4,15 +4,22 @@ import { PhotoData, TreeState } from '../types.ts';
 import { getRandomSpherePoint, getSpiralPoint } from '../utils.ts';
 import PhotoFrame from './PhotoFrame.tsx';
 
+// Updated interface to match App.tsx structure
+interface PhotoItem {
+  url: string;
+  height: number;
+}
+
 interface PhotoGalleryProps {
-  photos: string[]; // URLs
-  backPhoto: string | null;
+  photos: PhotoItem[]; 
+  backPhotoUrl: string | null;
+  backText: string;
   treeState: TreeState;
   onFocusChange?: (isFocused: boolean) => void;
   isClearing: boolean;
 }
 
-const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, backPhoto, treeState, onFocusChange, isClearing }) => {
+const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, backPhotoUrl, backText, treeState, onFocusChange, isClearing }) => {
   const [focusedId, setFocusedId] = useState<string | null>(null);
 
   // Notify parent of focus state
@@ -24,7 +31,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, backPhoto, treeStat
 
   // Generate Photo Data objects
   const photoObjects = useMemo(() => {
-    return photos.map((url, index) => {
+    return photos.map((item, index) => {
       const { position, rotationY } = getSpiralPoint(index, photos.length, 12, 5.5);
       
       const rot = new THREE.Euler(0, rotationY, 0);
@@ -32,10 +39,11 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, backPhoto, treeStat
 
       return {
         id: `photo-${index}`,
-        url,
+        url: item.url,
         position,
         rotation: rot,
-        chaosPos: chaos
+        chaosPos: chaos,
+        frameHeight: item.height // Pass the dynamic height
       } as PhotoData;
     });
   }, [photos]);
@@ -50,7 +58,8 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, backPhoto, treeStat
           isFocused={focusedId === data.id}
           onFocus={setFocusedId}
           onBlur={() => setFocusedId(null)}
-          backPhotoUrl={backPhoto}
+          backPhotoUrl={backPhotoUrl}
+          backText={backText}
           isClearing={isClearing}
         />
       ))}
