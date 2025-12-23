@@ -24,8 +24,7 @@ const processImage = (file: File): Promise<{ url: string; width: number; height:
       img.src = event.target?.result as string;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        // High Resolution (2K)
-        const MAX_SIZE = 2048; 
+        const MAX_SIZE = 1024; 
         let width = img.width;
         let height = img.height;
         
@@ -54,7 +53,7 @@ const processImage = (file: File): Promise<{ url: string; width: number; height:
               } else {
                 resolve({ url: img.src, width, height });
               }
-            }, 'image/jpeg', 0.92); // High Quality JPEG
+            }, 'image/jpeg', 0.85);
         } else {
             resolve({ url: img.src, width, height });
         }
@@ -95,6 +94,11 @@ const IconMessage = ({ size = 16 }: { size?: number }) => (
     <line x1="8" y1="9" x2="16" y2="9"></line>
     <line x1="8" y1="13" x2="14" y2="13"></line>
   </svg>
+);
+const IconRecord = ({ isRecording }: { isRecording: boolean }) => (
+    <div className={`w-4 h-4 rounded-full border-2 border-[#D4AF37] flex items-center justify-center transition-all ${isRecording ? 'border-red-500' : ''}`}>
+        <div className={`w-2 h-2 rounded-full transition-all duration-300 ${isRecording ? 'bg-red-500 animate-pulse scale-110' : 'bg-[#D4AF37]'}`} />
+    </div>
 );
 const IconChevronLeft = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -202,8 +206,8 @@ const HelpModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
                         <span className="text-white opacity-100 font-medium">凝聚或打散圣诞树，感受混沌与秩序的交织。</span>
                     </div>
                     <div>
-                        <span className="text-[#D4AF37] font-bold block mb-1 tracking-widest uppercase text-xl">上传图片</span>
-                        <span className="text-white opacity-100 font-medium">点击底部菜单上传您的记忆，它们将悬挂在树梢。</span>
+                        <span className="text-[#D4AF37] font-bold block mb-1 tracking-widest uppercase text-xl">录制视频</span>
+                        <span className="text-white opacity-100 font-medium">点击录制按钮开始捕捉 1080p 60fps 画面，再次点击停止并导出 MP4。</span>
                     </div>
                     <div>
                         <span className="text-[#D4AF37] font-bold block mb-1 tracking-widest uppercase text-xl">查看图片</span>
@@ -300,6 +304,7 @@ const App = () => {
     const [isMessageOpen, setIsMessageOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
 
     const pressTimer = useRef<number | null>(null);
     const startPos = useRef<{ x: number, y: number } | null>(null);
@@ -421,6 +426,17 @@ const App = () => {
         }, 800);
     }, [photos]);
 
+    // Record toggle handler
+    const toggleRecording = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsRecording(prev => !prev);
+    }, []);
+
+    // Stable handler for stopping recording to prevent unnecessary effect cleanup in Recorder
+    const handleRecordStop = useCallback(() => {
+        setIsRecording(false);
+    }, []);
+
     return (
         <ErrorBoundary>
             <div 
@@ -434,16 +450,20 @@ const App = () => {
                 onTouchEnd={handleEnd}
                 onClick={handleBackgroundClick}
             >
-                <Suspense fallback={null}>
-                    {/* Pass both Back Img and Back Text to Scene */}
-                    <Scene 
-                        treeState={treeState} 
-                        photos={photos} 
-                        backPhotoUrl={backImgUrl} 
-                        backText={backText}
-                        isClearing={isClearing} 
-                    />
-                </Suspense>
+                {/* 
+                  Removed outer Suspense to prevent Scene (and thus Recorder) 
+                  from unmounting when internal assets load (e.g., new photos).
+                  Suspense is now handled inside Scene.tsx.
+                */}
+                <Scene 
+                    treeState={treeState} 
+                    photos={photos} 
+                    backPhotoUrl={backImgUrl} 
+                    backText={backText}
+                    isClearing={isClearing} 
+                    isRecording={isRecording}
+                    onRecordStop={handleRecordStop}
+                />
 
                 <Loader />
                 <ProcessingOverlay isProcessing={isProcessing} />
@@ -454,6 +474,14 @@ const App = () => {
                     onConfirm={handleUpdateMessage}
                     onClear={handleClearMessage}
                 />
+
+                {/* Recording Indicator - Shows when menu is closed but recording is active */}
+                {isRecording && !isMenuOpen && (
+                    <div className="fixed top-6 right-6 z-[50] flex items-center gap-2 animate-pulse">
+                         <div className="w-3 h-3 bg-red-500 rounded-full shadow-[0_0_10px_rgba(255,0,0,0.8)]"></div>
+                         <span className="text-red-500 font-mono text-xs tracking-widest uppercase font-bold">REC</span>
+                    </div>
+                )}
 
                 <div 
                     className="absolute right-4 sm:right-8 z-[55] flex items-center justify-end overflow-visible"
@@ -473,6 +501,18 @@ const App = () => {
                     >
                         <button onClick={() => setIsMenuOpen(false)} className="hover:scale-110 transition-transform p-1 shrink-0">
                             <IconChevronRight />
+                        </button>
+
+                        <div className="w-[1px] h-4 bg-luxury-gold/40 shrink-0" />
+                        
+                        <button
+                            onClick={toggleRecording}
+                            className={`flex items-center gap-2 cursor-pointer transition-colors text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em] px-1 font-serif shrink-0 ${isRecording ? 'text-red-500 hover:text-red-400' : 'text-luxury-gold hover:text-luxury-gold-light'}`}
+                        >
+                            <IconRecord isRecording={isRecording} />
+                            <span className="shrink-0" style={{ transform: 'translateZ(0)' }}>
+                                <span className="hidden sm:inline">{isRecording ? 'STOP' : 'REC'}</span>
+                            </span>
                         </button>
 
                         <div className="w-[1px] h-4 bg-luxury-gold/40 shrink-0" />

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, Stars, Sparkles } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
@@ -8,6 +8,7 @@ import Foliage from './Foliage.tsx';
 import Ornaments from './Ornaments.tsx';
 import PhotoGallery from './PhotoGallery.tsx';
 import Star from './Star.tsx';
+import Recorder from './Recorder.tsx';
 
 // Interface matching App.tsx
 interface PhotoItem {
@@ -21,13 +22,15 @@ interface SceneProps {
   backPhotoUrl: string | null; // Changed prop name
   backText: string; // Added prop
   isClearing: boolean;
+  isRecording: boolean; // Added prop
+  onRecordStop: () => void; // Added prop
 }
 
 const BOX_PALETTE = ['#8B0000', '#D4AF37', '#ffffff'];
 const BALL_PALETTE = ['#D4AF37', '#FF0000', '#C0C0C0', '#0F5132'];
 const LIGHT_PALETTE = ['#FFD700'];
 
-const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhotoUrl, backText, isClearing }) => {
+const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhotoUrl, backText, isClearing, isRecording, onRecordStop }) => {
   const [isFocusing, setIsFocusing] = useState(false);
 
   const dpr = useMemo<[number, number]>(() => {
@@ -46,7 +49,8 @@ const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhotoUrl, backText
         depth: true,
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 1.0,
-        powerPreference: "high-performance"
+        powerPreference: "high-performance",
+        preserveDrawingBuffer: true // Required for canvas.captureStream
       }}
     >
       <color attach="background" args={['#011510']} />
@@ -55,8 +59,11 @@ const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhotoUrl, backText
          Environment Lighting:
          Changed to cdn.jsdmirror.cn to ensure access in China.
          We use the 'files' prop to point to a specific HDRI on the mirror.
+         Wrapped in Suspense to prevent Canvas unmounting on load.
       */}
-      <Environment files="https://cdn.jsdmirror.cn/gh/pmndrs/drei-assets/hdri/lebombo_1k.hdr" />
+      <Suspense fallback={null}>
+         <Environment files="https://cdn.jsdmirror.cn/gh/pmndrs/drei-assets/hdri/lebombo_1k.hdr" />
+      </Suspense>
 
       <ambientLight intensity={0.3} />
       <pointLight position={[10, 10, 10]} intensity={1.5} color="#FEDC56" />
@@ -108,6 +115,8 @@ const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhotoUrl, backText
             color="#000000" 
         />
       </group>
+
+      <Recorder isRecording={isRecording} onStop={onRecordStop} />
 
       <OrbitControls 
         minPolarAngle={0} 

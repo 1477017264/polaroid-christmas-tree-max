@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, Suspense } from 'react';
 import * as THREE from 'three';
 import { PhotoData, TreeState } from '../types.ts';
 import { getRandomSpherePoint, getSpiralPoint } from '../utils.ts';
@@ -51,17 +51,18 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, backPhotoUrl, backT
   return (
     <group>
       {photoObjects.map((data) => (
-        <PhotoFrame
-          key={data.id}
-          data={data}
-          treeState={treeState}
-          isFocused={focusedId === data.id}
-          onFocus={setFocusedId}
-          onBlur={() => setFocusedId(null)}
-          backPhotoUrl={backPhotoUrl}
-          backText={backText}
-          isClearing={isClearing}
-        />
+        <Suspense key={data.id} fallback={null}>
+            <PhotoFrame
+              data={data}
+              treeState={treeState}
+              isFocused={focusedId === data.id}
+              onFocus={setFocusedId}
+              onBlur={() => setFocusedId(null)}
+              backPhotoUrl={backPhotoUrl}
+              backText={backText}
+              isClearing={isClearing}
+            />
+        </Suspense>
       ))}
     </group>
   );
