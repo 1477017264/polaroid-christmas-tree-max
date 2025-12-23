@@ -151,11 +151,8 @@ const ProcessingOverlay = ({ isProcessing }: { isProcessing: boolean }) => (
 interface ErrorBoundaryProps { children?: ReactNode; }
 interface ErrorBoundaryState { hasError: boolean; error: string; }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-    constructor(props: ErrorBoundaryProps) {
-        super(props);
-        this.state = { hasError: false, error: '' };
-    }
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+    state: ErrorBoundaryState = { hasError: false, error: '' };
 
     static getDerivedStateFromError(error: any): ErrorBoundaryState { 
         return { hasError: true, error: error.toString() }; 

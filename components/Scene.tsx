@@ -33,17 +33,20 @@ const LIGHT_PALETTE = ['#FFD700'];
 const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhotoUrl, backText, isClearing, isRecording, onRecordStop }) => {
   const [isFocusing, setIsFocusing] = useState(false);
 
+  // Detect mobile user agent
+  const isMobile = useMemo(() => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent), []);
+
   const dpr = useMemo<[number, number]>(() => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    return isMobile ? [1, 1.75] : [1, 2];
-  }, []);
+    // Reduced max DPR on mobile to 1.5 for better stability/performance on Android
+    return isMobile ? [1, 1.5] : [1, 2];
+  }, [isMobile]);
 
   return (
     <Canvas
       camera={{ position: [0, 4, 20], fov: 45, near: 0.5, far: 200 }}
       dpr={dpr}
       gl={{ 
-        antialias: true,
+        antialias: false, // Disable default antialias (conflict with EffectComposer + saves resources)
         alpha: false,
         stencil: false,
         depth: true,
@@ -129,7 +132,12 @@ const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhotoUrl, backText
         enabled={true}
       />
 
-      <EffectComposer enableNormalPass={false} multisampling={8}>
+      <EffectComposer 
+        enableNormalPass={false} 
+        // Critical Fix: Disable MSAA (0) on mobile to prevent black screens/flashing.
+        // Keep it at 4 for Desktop for quality.
+        multisampling={isMobile ? 0 : 4} 
+      >
         {/* Disable Bloom intensity when focusing so the image remains sharp */}
         {/* Further reduced global glow: High threshold (0.9), Low intensity (0.4) */}
         <Bloom 
