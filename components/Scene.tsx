@@ -1,7 +1,7 @@
 import React, { useState, useMemo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, Stars, Sparkles } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, Vignette, SMAA } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { TreeState } from '../types.ts';
 import Foliage from './Foliage.tsx';
@@ -37,16 +37,17 @@ const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhotoUrl, backText
   const isMobile = useMemo(() => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent), []);
 
   const dpr = useMemo<[number, number]>(() => {
-    // Reduced max DPR on mobile to 1.5 for better stability/performance on Android
-    return isMobile ? [1, 1.5] : [1, 2];
-  }, [isMobile]);
+    // Return to standard 1-2 DPR range for better sharpness.
+    // We handle aliasing via SMAA instead of limiting resolution too aggressively.
+    return [1, 2];
+  }, []);
 
   return (
     <Canvas
       camera={{ position: [0, 4, 20], fov: 45, near: 0.5, far: 200 }}
       dpr={dpr}
       gl={{ 
-        antialias: false, // Disable default antialias (conflict with EffectComposer + saves resources)
+        antialias: false, // Disable default antialias, handled by PostProcessing
         alpha: false,
         stencil: false,
         depth: true,
@@ -134,12 +135,10 @@ const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhotoUrl, backText
 
       <EffectComposer 
         enableNormalPass={false} 
-        // Critical Fix: Disable MSAA (0) on mobile to prevent black screens/flashing.
-        // Keep it at 4 for Desktop for quality.
+        // Mobile: Disable MSAA (0) to prevent crash, use SMAA instead.
+        // Desktop: Use MSAA (4) for best native smoothing.
         multisampling={isMobile ? 0 : 4} 
       >
-        {/* Disable Bloom intensity when focusing so the image remains sharp */}
-        {/* Further reduced global glow: High threshold (0.9), Low intensity (0.4) */}
         <Bloom 
             luminanceThreshold={0.9} 
             mipmapBlur 
@@ -147,6 +146,8 @@ const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhotoUrl, backText
             radius={0.4} 
         />
         <Vignette eskil={false} offset={0.1} darkness={1.1} />
+        {/* SMAA is efficient for mobile anti-aliasing when MSAA is disabled */}
+        {isMobile && <SMAA />}
       </EffectComposer>
     </Canvas>
   );
