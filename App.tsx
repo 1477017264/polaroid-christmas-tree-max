@@ -307,6 +307,26 @@ const App = () => {
     const startPos = useRef<{ x: number, y: number } | null>(null);
     const hasMoved = useRef(false);
 
+    // Dynamic Document Title
+    useEffect(() => {
+        const focusTitle = "⛄ 圣诞快乐！🎄";
+        const blurTitle = " 🌟Polaroid Grand Luxury Christmas Tree🎁";
+
+        const handleFocus = () => { document.title = focusTitle; };
+        const handleBlur = () => { document.title = blurTitle; };
+
+        window.addEventListener('focus', handleFocus);
+        window.addEventListener('blur', handleBlur);
+
+        // Set initial title
+        document.title = document.hasFocus() ? focusTitle : blurTitle;
+
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('blur', handleBlur);
+        };
+    }, []);
+
     const handleStart = useCallback((e: any) => {
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
