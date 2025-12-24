@@ -1,4 +1,4 @@
-import React, { Component, useState, useCallback, Suspense, useEffect, useRef, ReactNode } from 'react';
+import React, { useState, useCallback, Suspense, useEffect, useRef, ReactNode } from 'react';
 import { useProgress } from '@react-three/drei';
 import Scene from './components/Scene.tsx';
 import { TreeState } from './types.ts';
@@ -151,7 +151,7 @@ const ProcessingOverlay = ({ isProcessing }: { isProcessing: boolean }) => (
 interface ErrorBoundaryProps { children?: ReactNode; }
 interface ErrorBoundaryState { hasError: boolean; error: string; }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
     state: ErrorBoundaryState = { hasError: false, error: '' };
 
     static getDerivedStateFromError(error: any): ErrorBoundaryState { 
@@ -538,6 +538,10 @@ const App = () => {
                             <IconUpload />
                             <span className="text-luxury-gold shrink-0" style={{ transform: 'translateZ(0)' }}>
                                 <span className="hidden sm:inline">STD</span>
+                            </span>
+                            {/* Added photo count display */}
+                            <span className="ml-1 font-mono text-[9px] sm:text-[10px] opacity-70 tracking-normal">
+                                {photos.length}/{MAX_PHOTOS}
                             </span>
                             <input type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={photos.length >= MAX_PHOTOS} />
                         </label>
