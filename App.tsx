@@ -1,4 +1,4 @@
-import React, { useState, useCallback, Suspense, useEffect, useRef, ReactNode } from 'react';
+import React, { useState, useCallback, Suspense, useEffect, useRef, ReactNode, Component } from 'react';
 import { useProgress } from '@react-three/drei';
 import Scene from './components/Scene.tsx';
 import { TreeState } from './types.ts';
@@ -106,6 +106,19 @@ const IconChevronLeft = () => (
 const IconChevronRight = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
 );
+const IconTree = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2L3 20h18L12 2z" />
+    <path d="M12 4v12" />
+    <path d="M7.5 13h9" />
+  </svg>
+);
+const IconChaos = () => (
+   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+     <circle cx="12" cy="12" r="1.5" />
+     <path d="M12 7V4M12 20v-3M7 12H4M20 12h-3M15.5 8.5L18 6M6 18l2.5-2.5M8.5 8.5L6 6M18 18l-2.5-2.5" />
+   </svg>
+);
 
 const IconBethlehemStar = ({ size = 24 }: { size?: number }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" fill="none">
@@ -151,8 +164,11 @@ const ProcessingOverlay = ({ isProcessing }: { isProcessing: boolean }) => (
 interface ErrorBoundaryProps { children?: ReactNode; }
 interface ErrorBoundaryState { hasError: boolean; error: string; }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-    state: ErrorBoundaryState = { hasError: false, error: '' };
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+    constructor(props: ErrorBoundaryProps) {
+        super(props);
+        this.state = { hasError: false, error: '' };
+    }
 
     static getDerivedStateFromError(error: any): ErrorBoundaryState { 
         return { hasError: true, error: error.toString() }; 
@@ -453,6 +469,12 @@ const App = () => {
     const handleRecordStop = useCallback(() => {
         setIsRecording(false);
     }, []);
+    
+    // Toggle Tree State Button Handler
+    const handleToggleState = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        setTreeState(prev => prev === TreeState.CHAOS ? TreeState.FORMED : TreeState.CHAOS);
+    }, []);
 
     return (
         <ErrorBoundary>
@@ -522,6 +544,19 @@ const App = () => {
 
                         <div className="w-[1px] h-4 bg-luxury-gold/40 shrink-0" />
                         
+                        {/* New Toggle State Button */}
+                        <button
+                            onClick={handleToggleState}
+                            className="flex items-center gap-2 cursor-pointer text-luxury-gold hover:text-luxury-gold-light transition-colors text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em] px-1 font-serif shrink-0"
+                        >
+                            {treeState === TreeState.CHAOS ? <IconTree /> : <IconChaos />}
+                            <span className="shrink-0" style={{ transform: 'translateZ(0)' }}>
+                                <span className="hidden sm:inline">{treeState === TreeState.CHAOS ? 'FORM' : 'CHAOS'}</span>
+                            </span>
+                        </button>
+                        
+                        <div className="w-[1px] h-4 bg-luxury-gold/40 shrink-0" />
+
                         <button
                             onClick={toggleRecording}
                             className={`flex items-center gap-2 cursor-pointer transition-colors text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em] px-1 font-serif shrink-0 ${isRecording ? 'text-red-500 hover:text-red-400' : 'text-luxury-gold hover:text-luxury-gold-light'}`}
