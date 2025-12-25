@@ -66,7 +66,7 @@ const Scene: React.FC<SceneProps> = ({ treeState, photos, backPhotoUrl, backText
          Wrapped in Suspense to prevent Canvas unmounting on load.
       */}
       <Suspense fallback={null}>
-         <Environment files="https://cdn.jsdmirror.cn/gh/pmndrs/drei-assets/hdri/lebombo_1k.hdr" />
+         <Environment files="https://cdn.jsdmirror.com/gh/pmndrs/drei-assets/hdri/lebombo_1k.hdr" />
       </Suspense>
 
       <ambientLight intensity={0.3} />
